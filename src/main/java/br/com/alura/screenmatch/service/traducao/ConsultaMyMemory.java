@@ -10,13 +10,14 @@ import java.nio.charset.StandardCharsets;
 public class ConsultaMyMemory {
 
     private static final ObjectMapper mapper = new ObjectMapper();
-
     private static final ConsumoApi consumo = new ConsumoApi();
 
-    private static final String apiKey =
-            System.getenv("APYMEMORY_KEY");
-
     public static String obterTraducao(String textoOriginal) {
+
+        if (textoOriginal == null || textoOriginal.isBlank()) {
+            return "";
+        }
+
         try {
             String texto = URLEncoder.encode(
                     textoOriginal,
@@ -30,17 +31,24 @@ public class ConsultaMyMemory {
 
             String url = "https://api.mymemory.translated.net/get"
                     + "?q=" + texto
-                    + "&langpair=" + langpair
-                    + "&key=" + apiKey;
+                    + "&langpair=" + langpair;
 
             String json = consumo.obterDados(url);
 
             DadosTraducao traducao =
                     mapper.readValue(json, DadosTraducao.class);
 
+            if (traducao == null
+                    || traducao.dadosResposta() == null
+                    || traducao.dadosResposta().textoTraduzido() == null) {
+
+                return textoOriginal;
+            }
+
             return traducao
                     .dadosResposta()
-                    .textoTraduzido();
+                    .textoTraduzido()
+                    .trim();
 
         } catch (JsonProcessingException e) {
             throw new RuntimeException(
